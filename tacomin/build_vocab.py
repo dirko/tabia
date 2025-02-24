@@ -76,20 +76,24 @@ def pack(words_member, words):
     return x
 
 
-def save(x, vocab, words_member):
+def save(x, vocab, words_member, output_data_file, output_meta_file):
     print('Saving data')
-    save_npz('data.npz', x)
+    save_npz(output_data_file, x)
     # Save the vocab
     print('Saving meta')
-    with open('meta.pkl', 'wb') as f:
+    with open(output_meta_file, 'wb') as f:
         dump((vocab, [(w.name.split('/')[-1], snr) for w, snr in words_member]), f)
     print('Done')
 
 
-def main():
+def main(
+        input_file='/Users/dirkocoetsee/Downloads/fuse-binaries-dec2014.tar.gz',
+        output_data_file='experiments/results/data.npz',
+        output_meta_file='experiments/results/meta.pkl'
+):
     t0 = time.time()
     # pass over all files and build summary
-    file = '/Users/dirkocoetsee/Downloads/fuse-binaries-dec2014.tar.gz'
+    file = input_file
     tar_stream = tarfile.open(file, mode='r|*')
     vocab, words_member, words =  load_from_tar(tar_stream)
     print('vocab size', len(vocab))
@@ -105,7 +109,7 @@ def main():
     print('Time taken', t2 - t1)
 
     # Save to disk
-    save(x, vocab, words_member)
+    save(x, vocab, words_member, output_data_file, output_meta_file)
     t3 = time.time()
     print('Time taken', t3 - t2)
     print('Total time taken', t3 - t0)

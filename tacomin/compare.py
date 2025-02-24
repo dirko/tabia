@@ -19,7 +19,7 @@ def csr_topk_rows(csr_matrix, k):
     return topk_indices
 
 
-def main(infile='data.npz', outfile='top20.npz', limit=None):
+def main(infile='experiments/results/data.npz', outfile='experiments/results/top20.npz', limit=None):
     # Load from disk
     x = load_npz(infile)
 
