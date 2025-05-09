@@ -1,4 +1,5 @@
 import numpy as np
+import time
 from scipy.sparse import load_npz
 from tqdm import tqdm
 
@@ -19,10 +20,11 @@ def csr_topk_rows(csr_matrix, k):
     return topk_indices
 
 
-def main(infile='experiments/results/data.npz', outfile='experiments/results/top20.npz', limit=None):
+def main(infile='experiments/results/data.npz', outfile='experiments/results/top20.npz', limit=None, top_k=20):
     # Load from disk
     x = load_npz(infile)
 
+    t0 = time.time()
     # Select columns where sum is larger than 1
     cols = np.where(x.sum(axis=0) > 1)[1]
     xd = x[:, cols]
@@ -38,7 +40,7 @@ def main(infile='experiments/results/data.npz', outfile='experiments/results/top
     print('done', xd.shape)
 
     # Get the top 20 columns for each row
-    k = 20
+    k = top_k
     xdl = xd.tolil()
     xdc = xd.T.tocsc()
 
@@ -52,7 +54,10 @@ def main(infile='experiments/results/data.npz', outfile='experiments/results/top
         topks.append(args)
 
     top = np.concat(topks)
-    np.savez_compressed(outfile, top=top)
+    t1 = time.time()
+    print('Top shape', top.shape)
+    print('Time taken', t1 - t0)
+    np.savez_compressed(outfile.format(k=top_k), top=top)
 
 
 if __name__ == '__main__':

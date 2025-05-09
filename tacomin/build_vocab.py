@@ -15,13 +15,18 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-def load_from_tar(tar):
+def load_from_tar(tar, counts_only=False):
     vocab = {}
     words_member = []
     words = []
     t0 = time.time()
     total_time_open = 0
     icounter = 0
+    cell_counter = 0
+    cell_counter_cropped = 0
+    num_cropped_tables = 0
+    num_files = 0
+    num_sheets = 0
     for _, member in enumerate(tar):
         t0_loop = time.time()
         if icounter > 1_000_000:
@@ -30,7 +35,7 @@ def load_from_tar(tar):
             continue
         try:
             buffer = tar.extractfile(member)
-            dfs = pd.read_excel(io.BytesIO(buffer.read()), sheet_name=None, header=None, index_col=None, nrows=100)
+            dfs = pd.read_excel(io.BytesIO(buffer.read()), sheet_name=None, header=None, index_col=None, nrows=10000)
             t1 = time.time()
             total_time_open += t1 - t0_loop
         except CompDocError:
@@ -41,17 +46,26 @@ def load_from_tar(tar):
             continue
         except Exception as e:
             continue
+        num_files += 1
         for dfi, df in enumerate(dfs.values()):
-            # Iterate over all cells
-            vals = {str(v)[:20] for v in df.values[:100, :100].flatten()}
-            # Update vocab
-            vocab_size = len(vocab)
-            # Add new words to vocab
-            vocab.update({v: vocab_size + i for i, v in
-                          enumerate(val[:20] if isinstance(val, str) else val for val in vals if val not in vocab)})
-            # Update words
-            words.append({vocab[v[:20] if isinstance(v, str) else v] for v in vals})
-            words_member.append((member, dfi))
+            # Add to number of cells
+            num_sheets += 1
+            cell_counter += df.size
+            cell_counter_cropped += df.values[:100, :100].size
+            if df.shape[0] > 100 or df.shape[1] > 100:
+                num_cropped_tables += 1
+            vals = {}
+            if not counts_only:
+                # Iterate over all cells
+                vals = {str(v)[:20] for v in df.values[:100, :100].flatten()}
+                # Update vocab
+                vocab_size = len(vocab)
+                # Add new words to vocab
+                vocab.update({v: vocab_size + i for i, v in
+                              enumerate(val[:20] if isinstance(val, str) else val for val in vals if val not in vocab)})
+                # Update words
+                words.append({vocab[v[:20] if isinstance(v, str) else v] for v in vals})
+                words_member.append((member, dfi))
             t2 = time.time()
             total_time = (t2 - t0)
             percentage_open = total_time_open / total_time
@@ -59,7 +73,15 @@ def load_from_tar(tar):
             items_per_second = icounter / (t2 - t0)
             if icounter % 100 == 0:
                 print(f'{icounter}', f'{items_per_second:.1f}', f'{percentage_open:.2%}', member.name,
-                      '  ', len(dfs), list(dfs.values())[0].shape, len(vals), len(vocab))
+                      '  ', len(dfs), list(dfs.values())[0].shape, len(vals), len(vocab), cell_counter, cell_counter_cropped, num_files, num_sheets, num_cropped_tables)
+    print('Final count:')
+    t2 = time.time()
+    total_time = (t2 - t0)
+    percentage_open = total_time_open / total_time
+    items_per_second = icounter / (t2 - t0)
+    print(f'{icounter}', f'{items_per_second:.1f}', f'{percentage_open:.2%}',
+          '  ', len(vocab), cell_counter, cell_counter_cropped, num_files, num_sheets, num_cropped_tables)
+    print()
     return vocab, words_member, words
 
 
@@ -89,18 +111,22 @@ def save(x, vocab, words_member, output_data_file, output_meta_file):
 def main(
         input_file='/Users/dirkocoetsee/Downloads/fuse-binaries-dec2014.tar.gz',
         output_data_file='experiments/results/data.npz',
-        output_meta_file='experiments/results/meta.pkl'
+        output_meta_file='experiments/results/meta.pkl',
+        counts_only=False,
 ):
     t0 = time.time()
     # pass over all files and build summary
     file = input_file
     tar_stream = tarfile.open(file, mode='r|*')
-    vocab, words_member, words =  load_from_tar(tar_stream)
+    vocab, words_member, words = load_from_tar(tar_stream, counts_only=counts_only)
     print('vocab size', len(vocab))
     print('words size', len(words))
     print('words_member size', len(words_member))
     t1 = time.time()
     print('Time taken', t1 - t0)
+    if counts_only:
+        print('Counts only')
+        return
 
     print('Packing')
     x = pack(words_member, words)
