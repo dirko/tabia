@@ -128,7 +128,7 @@ def concat(df_moves):
 def main(x_file, top_file, parquet_tall_dir, top_k=20, n_contains=5, n_move_size=5):
     top, x_set = load_data(x_file, top_file, top_k)
     t0 = time.time()
-    scores = subset(top, x_set)
+    scores = subset(top, x_set, k=top_k)
     filtered_scores = [(i, j, sa) for i ,j, sa in scores if sa >= n_contains]
     t1 = time.time()
     print('Scores: ', len(filtered_scores))
