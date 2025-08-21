@@ -3,7 +3,7 @@
 from .table import Table
 from .base_ops import select, project, union, difference, product, intersect
 from .operations import transpose, column, row, below, left, right, top, bottom, move, insert_column, delete_column, align_tops, \
-    concat_align_tops, duplicate_column, height, fold, join_rows
+    concat_align_tops, duplicate_column, height, fold, join_rows, fill1
 
 
 def test_selection():
@@ -148,3 +148,9 @@ def test_join_rows():
     b = Table([['b', '3'], ['c', '4']])
     c = join_rows(a % b, a, b)
     assert c.to_list() == [['a', '1', None, None], ['b', '2', 'b', '3']]
+
+
+def test_fill1():
+    a = Table([['desc', 'a'], [None, 'b']])
+    b = fill1(a)
+    assert b.to_list() == [['desc', 'a'], ['desc', 'b'], [None, 'b']]

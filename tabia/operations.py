@@ -97,6 +97,58 @@ def match(table1, table2):
     return select(table1 * table2, "v1 = v2")
 
 
+def align_rows(matching, table):
+    """
+    Align two tables vertically.
+    """
+    return project(select(matching * table, "i2 = i3"), ['i1', 'j3', 'v3'])
+
+
+def join_rows(matching, table1, table2):
+    """
+    Join two tables on rows.
+    """
+    return table1 | align_rows(matching, table2)
+
+
+def height(table):
+    """
+    Calculate the height of the table.
+    """
+    #  HEIGHT(A) = πi2−i1,j2,v2 TOPM(A) × BOTTOMM(A)
+    return project(
+        top(table) * bottom(table) * table,
+        ['i2 - i1 + 1', 'j3', 'v3']
+    )
+
+
+def width(table):
+    """
+    Calculate the width of the table.
+    """
+    return project(
+        left(table) * right(table) * table,
+        ['j2 - j1 + 1', 'i3', 'v3']
+    )
+
+
+def coalesce(table1, table2):
+    """
+    Where table1 and table2 overlap, keep the values from table1.
+    """
+    return table1 + (table2 / project(
+        select(table2 * table1, "i1 = i2 and j1 = j2"),
+        ['i1', 'j1', 'v1']
+    ))
+
+
+def fill1(table):
+    """
+    Forward fill 1 cell.
+    """
+    return coalesce(table, project(table, ['i + 1', 'j', 'v']))
+
+
 def concat_vertically(table1, table2):
     """
     Concatenate two tables vertically.
@@ -112,6 +164,13 @@ def concat_horizontally(table1, table2):
     return transpose(transpose(table1) - transpose(table2))
 
 
+def delete_column(table, index):
+    """
+    Delete a column from the table at a specified index.
+    """
+    return left(table, index=index) | right(table, index=index)
+
+
 def insert_column(table, column, index):
     """
     Insert a column into the table at a specified index.
@@ -124,13 +183,6 @@ def insert_row(table, row, index):
     Insert a row into the table at a specified index.
     """
     return above(table, index=index) - row - below(table, index=index-1)
-
-
-def delete_column(table, index):
-    """
-    Delete a column from the table at a specified index.
-    """
-    return left(table, index=index) | right(table, index=index)
 
 
 def delete_row(table, index):
@@ -161,27 +213,6 @@ def duplicate_column(table, index):
     return insert_column(table, column(table, index=index), index=index)
 
 
-def height(table):
-    """
-    Calculate the height of the table.
-    """
-    #  HEIGHT(A) = πi2−i1,j2,v2 TOPM(A) × BOTTOMM(A)
-    return project(
-        top(table) * bottom(table) * table,
-        ['i2 - i1 + 1', 'j3', 'v3']
-    )
-
-
-def width(table):
-    """
-    Calculate the width of the table.
-    """
-    return project(
-        left(table) * right(table) * table,
-        ['j2 - j1 + 1', 'i3', 'v3']
-    )
-
-
 def origin(table):
     """
     Move the table so that its upper-left corner is at (0, 0).
@@ -199,16 +230,3 @@ def fold(indices, columns, values):
     return ni | nc | nv
 
 
-
-def align_rows(matching, table):
-    """
-    Align two tables vertically.
-    """
-    return project(select(matching * table, "i2 = i3"), ['i1', 'j3', 'v3'])
-
-
-def join_rows(matching, table1, table2):
-    """
-    Join two tables on rows.
-    """
-    return table1 | align_rows(matching, table2)

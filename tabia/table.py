@@ -54,12 +54,12 @@ class Table:
 
     def __init__(self, data):
         if isinstance(data, list):
-            self.data = list_to_ijv(data)
+            self.data = list_to_ijv(data, skip_none=True)
         elif isinstance(data, pd.DataFrame):
             if set(data.columns) == {'i', 'j', 'v'}:
                 self.data = data
             else:
-                self.data = df_to_ijv(data)
+                self.data = df_to_ijv(data, skip_na=True)
         elif isinstance(data, duckdb.DuckDBPyRelation):
             self.data = data
         data = self.data
