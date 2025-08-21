@@ -14,7 +14,7 @@ if __name__ == '__main__':
         'command', type=str, help='Command to run',
         choices=['vocab', 'compare', 'search', 'compress', 'parquet', 'tall', 'refine']
     )
-    parser.add_argument('--input-tar', type=str, help='Input file', default='/Users/dirkocoetsee/Downloads/fuse-binaries-dec2014.tar.gz')
+    parser.add_argument('--input-tar', type=str, help='Input file', default='~/Downloads/fuse-binaries-dec2014.tar.gz')
     parser.add_argument('--output-data', type=str, help='Output data file', default='experiments/results/data.npz')
     parser.add_argument('--output-meta', type=str, help='Output data file', default='experiments/results/meta.pkl')
     parser.add_argument('--counts-only', type=bool, help='Do not build the vocab', default='False')

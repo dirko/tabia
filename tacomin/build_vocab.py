@@ -109,7 +109,7 @@ def save(x, vocab, words_member, output_data_file, output_meta_file):
 
 
 def main(
-        input_file='/Users/dirkocoetsee/Downloads/fuse-binaries-dec2014.tar.gz',
+        input_file='~/Downloads/fuse-binaries-dec2014.tar.gz',
         output_data_file='experiments/results/data.npz',
         output_meta_file='experiments/results/meta.pkl',
         counts_only=False,
